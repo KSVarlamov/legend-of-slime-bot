@@ -1,9 +1,7 @@
 import time
 import importlib
 import os
-import threading
 import config
-import utils
 import pygetwindow as gw
 
 # Найти окно BlueStacks
@@ -20,18 +18,17 @@ def load_modules():
     for module_name in module_files:
         try:
             module = importlib.import_module(f"modules.{module_name}")
-            if hasattr(module, "name") and hasattr(module, "description") and hasattr(module, "run"):
+            print(f"Загружаем: {module_name}")  # <--- ВЫВОДИТЬ ИМЕНА МОДУЛЕЙ
+            
+            if hasattr(module, "name") and hasattr(module, "description") and hasattr(module, "run") and hasattr(module, "interval"):
                 modules.append(module)
+            else:
+                print(f"Модуль {module_name} не имеет всех необходимых атрибутов!")
         except Exception as e:
             print(f"Ошибка загрузки {module_name}: {e}")
 
     return modules
 
-# Запуск модулей в отдельных потоках
-def run_module(module):
-    while True:
-        module.run()
-        time.sleep(module.interval)
 
 def main():
     print("Поиск окна BlueStacks...")
@@ -43,7 +40,8 @@ def main():
     
     print(f"BlueStacks найден! Координаты: {x}, {y}")
     
-    print("\nЗагрузка модулей...")
+    print("\nЗагрузка модулей...")  # <-- Здесь исправлено
+
     modules = load_modules()
 
     if not modules:
@@ -54,15 +52,16 @@ def main():
     for mod in modules:
         print(f"- {mod.name}: {mod.description} (Интервал: {mod.interval} сек.)")
 
-    # Запуск модулей в потоках
-    for mod in modules:
-        thread = threading.Thread(target=run_module, args=(mod,))
-        thread.daemon = True
-        thread.start()
+    print("\nБот запущен!")  # <-- Здесь тоже проверил
 
-    print("\nБот запущен!")
+    # Основной цикл работы
     while True:
-        time.sleep(1)  # Главное меню в ожидании
+        for mod in modules:
+            print(f"\nЗапуск модуля: {mod.name}")
+            mod.run()  # Выполнение модуля
+            print(f"Ожидание {mod.interval} секунд перед следующим модулем...")
+            time.sleep(mod.interval)
+
 
 if __name__ == "__main__":
     main()
